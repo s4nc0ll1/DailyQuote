@@ -5,13 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Quotes</title>
     <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Get inspired with daily quotes from famous people">
 </head>
 <body>
-    <div class="quote-container">
-        <h1>Daily Quote</h1>
-        <p id="quote"></p>
-        <p id="author"></p>
-        <button onclick="fetchQuote()">Get New Quote</button>
+    <div class="container">
+        <div class="quote-container">
+            <h1>Daily Quote</h1>
+            <div class="quote-content">
+                <p id="quote"></p>
+                <p id="author"></p>
+                <div class="actions">
+                    <button onclick="fetchQuote()">Get New Quote</button>
+                    <button id="favorite-button" class="icon-button">🤍</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="favorites-container">
+            <h2>My Favorite Quotes</h2>
+            <ul id="favorites-list"></ul>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
