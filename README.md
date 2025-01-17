@@ -80,6 +80,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Santiago Collantes Zuluaga - [@your_twitter](https://twitter.com/your_twitter)
+Santiago Collantes Zuluaga - [LinkedIn](https://www.linkedin.com/in/santiago-collantes-zuluaga/)
 
 Project Link: [https://github.com/s4nc0ll1/DailyQuote](https://github.com/s4nc0ll1/DailyQuote)
