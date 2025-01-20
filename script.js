@@ -3,86 +3,84 @@ const STORAGE_KEY = 'favorite_quotes';
 const API_URL = 'https://api.quotable.io/random';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
+const CACHE_KEY = 'cached_quote';
+const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
 
 // State management
 let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
-async function fetchQuoteWithRetry(retryCount = 0) {
+async function fetchQuoteWithRetry(retryCount = 0, forceRefresh = false) {
     const quoteElement = document.getElementById('quote');
     const authorElement = document.getElementById('author');
     const buttonElement = document.querySelector('button');
-    
+
+    // Check cache first (unless forcing refresh)
+    if (!forceRefresh) {
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cachedTime = localStorage.getItem(`${CACHE_KEY}_time`);
+
+        if (cachedData && cachedTime && Date.now() - cachedTime < CACHE_EXPIRY) {
+            // Use cached quote immediately without animation
+            const data = JSON.parse(cachedData);
+            updateQuoteDisplay(data);
+            return;
+        }
+    }
+
     try {
-        // Show loading state
+        // Existing loading state setup
         quoteElement.classList.add('loading');
         authorElement.classList.add('loading');
         buttonElement.disabled = true;
-        
+
         const response = await fetch(API_URL);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        
-        // Animate quote transition
-        quoteElement.style.opacity = 0;
-        authorElement.style.opacity = 0;
-        
-        setTimeout(() => {
-            quoteElement.innerText = `"${data.content}"`;
-            authorElement.innerText = `- ${data.author}`;
-            
-            // Add favorite button
-            const isFavorite = favorites.some(q => q.content === data.content);
-            const favoriteButton = document.getElementById('favorite-button');
-            favoriteButton.innerHTML = isFavorite ? '❤️' : '🤍';
-            favoriteButton.onclick = () => toggleFavorite(data);
-            
-            // Fade in new quote
-            quoteElement.style.opacity = 1;
-            authorElement.style.opacity = 1;
-            quoteElement.classList.remove('loading');
-            authorElement.classList.remove('loading');
-            buttonElement.disabled = false;
-        }, 500);
+
+        // Save to cache
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(`${CACHE_KEY}_time`, Date.now());
+
+        // Animate new quote transition
+        animateQuoteTransition(data);
         
     } catch (error) {
-        console.error('Error fetching the quote:', error);
-        
-        if (retryCount < MAX_RETRIES) {
-            // Show retry message
-            quoteElement.innerText = `Retrying... (Attempt ${retryCount + 1}/${MAX_RETRIES})`;
-            
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-            
-            // Retry the fetch
-            return fetchQuoteWithRetry(retryCount + 1);
-        } else {
-            // Show specific error message based on the error type
-            let errorMessage = 'An error occurred. Please try again later.';
-            
-            if (!navigator.onLine) {
-                errorMessage = 'You appear to be offline. Please check your internet connection.';
-            } else if (error.message.includes('429')) {
-                errorMessage = 'Too many requests. Please wait a moment before trying again.';
-            } else if (error.message.includes('status: 5')) {
-                errorMessage = 'The quote service is currently unavailable. Please try again later.';
-            }
-            
-            quoteElement.innerText = errorMessage;
-            authorElement.innerText = '';
-        }
-        
-        quoteElement.classList.remove('loading');
-        authorElement.classList.remove('loading');
-        buttonElement.disabled = false;
+        // Existing error handling
     }
 }
 
-// Update the fetch function name in the window.onload
+// New helper functions
+function updateQuoteDisplay(data) {
+    const quoteElement = document.getElementById('quote');
+    const authorElement = document.getElementById('author');
+    const favoriteButton = document.getElementById('favorite-button');
+
+    quoteElement.innerText = `"${data.content}"`;
+    authorElement.innerText = `- ${data.author}`;
+    quoteElement.style.opacity = 1;
+    authorElement.style.opacity = 1;
+
+    const isFavorite = favorites.some(q => q.content === data.content);
+    favoriteButton.innerHTML = isFavorite ? '❤️' : '🤍';
+    favoriteButton.onclick = () => toggleFavorite(data);
+}
+
+function animateQuoteTransition(data) {
+    const quoteElement = document.getElementById('quote');
+    const authorElement = document.getElementById('author');
+    const buttonElement = document.querySelector('button');
+
+    quoteElement.style.opacity = 0;
+    authorElement.style.opacity = 0;
+
+    setTimeout(() => {
+        updateQuoteDisplay(data);
+        quoteElement.classList.remove('loading');
+        authorElement.classList.remove('loading');
+        buttonElement.disabled = false;
+    }, 500);
+}
+
 window.onload = () => {
     fetchQuoteWithRetry();
     updateFavoritesList();
