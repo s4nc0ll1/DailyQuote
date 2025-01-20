@@ -1,10 +1,13 @@
 // Constants
 const STORAGE_KEY = 'favorite_quotes';
+const API_URL = 'https://api.quotable.io/random';
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
 // State management
 let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
-async function fetchQuote() {
+async function fetchQuoteWithRetry(retryCount = 0) {
     const quoteElement = document.getElementById('quote');
     const authorElement = document.getElementById('author');
     const buttonElement = document.querySelector('button');
@@ -15,7 +18,12 @@ async function fetchQuote() {
         authorElement.classList.add('loading');
         buttonElement.disabled = true;
         
-        const response = await fetch('https://api.quotable.io/random');
+        const response = await fetch(API_URL);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         // Animate quote transition
@@ -42,12 +50,43 @@ async function fetchQuote() {
         
     } catch (error) {
         console.error('Error fetching the quote:', error);
-        quoteElement.innerText = 'An error occurred. Please try again later.';
+        
+        if (retryCount < MAX_RETRIES) {
+            // Show retry message
+            quoteElement.innerText = `Retrying... (Attempt ${retryCount + 1}/${MAX_RETRIES})`;
+            
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            
+            // Retry the fetch
+            return fetchQuoteWithRetry(retryCount + 1);
+        } else {
+            // Show specific error message based on the error type
+            let errorMessage = 'An error occurred. Please try again later.';
+            
+            if (!navigator.onLine) {
+                errorMessage = 'You appear to be offline. Please check your internet connection.';
+            } else if (error.message.includes('429')) {
+                errorMessage = 'Too many requests. Please wait a moment before trying again.';
+            } else if (error.message.includes('status: 5')) {
+                errorMessage = 'The quote service is currently unavailable. Please try again later.';
+            }
+            
+            quoteElement.innerText = errorMessage;
+            authorElement.innerText = '';
+        }
+        
         quoteElement.classList.remove('loading');
         authorElement.classList.remove('loading');
         buttonElement.disabled = false;
     }
 }
+
+// Update the fetch function name in the window.onload
+window.onload = () => {
+    fetchQuoteWithRetry();
+    updateFavoritesList();
+};
 
 function toggleFavorite(quote) {
     const favoriteButton = document.getElementById('favorite-button');
