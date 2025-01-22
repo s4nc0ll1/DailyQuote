@@ -174,3 +174,7 @@ button:disabled {
 .delete-button:hover {
     background-color: #cc0000;
 }
+.error-message {
+    color: #dc3838;
+    font-style: italic;
+}

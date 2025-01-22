@@ -45,7 +45,36 @@ async function fetchQuoteWithRetry(retryCount = 0, forceRefresh = false) {
         animateQuoteTransition(data);
         
     } catch (error) {
-        // Existing error handling
+        console.error('Fetch error:', error);
+    
+        if (retryCount < MAX_RETRIES) {
+            console.log(`Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+            setTimeout(() => {
+                fetchQuoteWithRetry(retryCount + 1, forceRefresh);
+            }, RETRY_DELAY);
+        } else {
+            // After failed retries, try to show cached data
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            const cachedTime = parseInt(localStorage.getItem(`${CACHE_KEY}_time`)) || 0;
+            const quoteElement = document.getElementById('quote');
+            const authorElement = document.getElementById('author');
+            const buttonElement = document.querySelector('button');
+    
+            if (cachedData && Date.now() - cachedTime < CACHE_EXPIRY * 2) {
+                // Show cached data even if expired (with longer expiry)
+                const data = JSON.parse(cachedData);
+                animateQuoteTransition(data);
+            } else {
+                // Show error message
+                quoteElement.textContent = "Failed to load quote. Please check your connection.";
+                authorElement.textContent = "";
+            }
+    
+            // Reset loading state
+            quoteElement.classList.remove('loading');
+            authorElement.classList.remove('loading');
+            buttonElement.disabled = false;
+        }
     }
 }
 
