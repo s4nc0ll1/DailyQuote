@@ -5,7 +5,6 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 const CACHE_KEY = 'cached_quote';
 const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
-const PROXY_URL = 'https://cors-anywhere.herokuapp.com/';
 
 // State management
 let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -34,7 +33,7 @@ async function fetchQuoteWithRetry(retryCount = 0, forceRefresh = false) {
         authorElement.classList.add('loading');
         buttonElement.disabled = true;
 
-        const response = await fetch(PROXY_URL + API_URL);
+        const response = await fetch(API_URL);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
@@ -76,11 +75,6 @@ async function fetchQuoteWithRetry(retryCount = 0, forceRefresh = false) {
             authorElement.classList.remove('loading');
             buttonElement.disabled = false;
         }
-    } finally {
-        // Remove loading state
-        quoteElement.classList.remove('loading');
-        authorElement.classList.remove('loading');
-        buttonElement.disabled = false;
     }
 }
 
