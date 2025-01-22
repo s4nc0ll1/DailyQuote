@@ -81,11 +81,6 @@ function animateQuoteTransition(data) {
     }, 500);
 }
 
-window.onload = () => {
-    fetchQuoteWithRetry();
-    updateFavoritesList();
-};
-
 function toggleFavorite(quote) {
     const favoriteButton = document.getElementById('favorite-button');
     const index = favorites.findIndex(q => q.content === quote.content);
@@ -164,6 +159,6 @@ async function shareQuote(content, author) {
 
 // Initialize on page load
 window.onload = () => {
-    fetchQuote();
+    fetchQuoteWithRetry();
     updateFavoritesList();
 };
